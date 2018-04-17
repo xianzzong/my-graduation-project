@@ -70,7 +70,7 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
 
 def run_test():
   model_name = "./sports1m_finetuning_ucf101.model"
-  test_list_file = 'list/test.list'
+  test_list_file = 'list/test1.list'
   num_test_videos = len(list(open(test_list_file,'r')))
   print("Number of test videos={}".format(num_test_videos))
 
@@ -109,7 +109,8 @@ def run_test():
       logits = c3d_model.inference_c3d(images_placeholder[gpu_index * FLAGS.batch_size:(gpu_index + 1) * FLAGS.batch_size,:,:,:,:], 0.6, FLAGS.batch_size, weights, biases)
       #logits.append(logit)
   #logits = tf.concat(0, logits)
-  norm_score = tf.nn.softmax(logits)
+  norm_score = logits
+  #norm_score = tf.nn.softmax(logits)
   saver = tf.train.Saver()
   sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
   init = tf.initialize_all_variables()
@@ -135,6 +136,7 @@ def run_test():
             session=sess,
             feed_dict={images_placeholder: test_images}
             )
+    return predict_score
     for i in range(0, valid_len):
       true_label = test_labels[i],
       top1_predicted_label = np.argmax(predict_score[i])
@@ -147,8 +149,22 @@ def run_test():
   write_file.close()
   print("done")
 
+def calculate_image(score):
+    #wt = tf.Variable(tf.truncated_normal([2,4,4,1,512]))
+    #wt = tf.constant(1.0, shape=[2,4,4,1,512])
+    wt = tf.constant(1.0, shape=[1,2,2,1,128])
+    out1 = tf.nn.conv3d_transpose(score, wt, [10,16,112,112,1], [1,1,2,2,1],'SAME')
+    sess = tf.Session()
+    tf.global_variables_initializer().run(session=sess)
+    out = sess.run(out1)
+    return out
+
 def main(_):
-  run_test()
+  score=run_test()
+  print (score.shape)
+  #image = calculate_image(score)
+  #print (image.shape)
+  np.save('image_conv5_origin.npy',score)
 #run_test()
 if __name__ == '__main__':
   tf.app.run()
