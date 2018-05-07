@@ -137,3 +137,37 @@ def inference_c3d(_X, _dropout, batch_size, _weights, _biases):
   out = tf.matmul(dense2, _weights['out']) + _biases['out']
 
   return out
+
+def visual_conv5_topone(data,_weights):
+
+  visual_con5 = tf.nn.relu(data)
+  visual_con5 = tf.nn.conv3d_transpose(visual_con5, _weights['wc5b'], (10,16,7,7,512), strides=[1,1,1,1,1], padding='SAME')
+  visual_con5 = tf.nn.relu(visual_con5)
+  visual_con5 = tf.nn.conv3d_transpose(visual_con5, _weights['wc5a'], (10,16,7,7,512), strides=[1,1,1,1,1], padding='SAME')
+
+  visual_unpool4 = unpool(visual_con5, k=2)
+  #visual_unpool4 = visual_con5
+  visual_con4 = tf.nn.relu(visual_unpool4)
+  visual_con4 = tf.nn.conv3d_transpose(visual_con4, _weights['wc4b'], (10,16,14,14,512), strides=[1,1,1,1,1], padding='SAME')
+  visual_con4 = tf.nn.relu(visual_con4)
+  visual_con4 = tf.nn.conv3d_transpose(visual_con4, _weights['wc4a'], (10,16,14,14,256), strides=[1,1,1,1,1], padding='SAME')
+
+  visual_unpool3 = unpool(visual_con4, k=2)
+  #visual_unpool3 = visual_con4
+  visual_con3 = tf.nn.relu(visual_unpool3)
+  visual_con3 = tf.nn.conv3d_transpose(visual_con3, _weights['wc3b'], (10,16,28,28,256), strides=[1,1,1,1,1], padding='SAME')
+  visual_con3 = tf.nn.relu(visual_con3)
+  visual_con3 = tf.nn.conv3d_transpose(visual_con3, _weights['wc3a'], (10,16,28,28,128), strides=[1,1,1,1,1], padding='SAME')
+
+  visual_unpool2 = unpool(visual_con3, k=2)
+  #visual_unpool2 = visual_con3
+  visual_con2 = tf.nn.relu(visual_unpool2)
+  visual_con2 = tf.nn.conv3d_transpose(visual_con2, _weights['wc2'], (10,16,56,56,64), strides=[1,1,1,1,1], padding='SAME')
+
+  visual_unpool1 = unpool(visual_con2, k=2)
+  #visual_unpool1 = visual_con2
+  visual_con1 = tf.nn.relu(visual_unpool1)
+  visual_con1 = tf.nn.conv3d_transpose(visual_con1, _weights['wc1'], (10,16,112,112,3), strides=[1,1,1,1,1], padding='SAME')
+
+  #visualization end
+  return visual_con1

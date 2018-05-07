@@ -103,3 +103,8 @@ def read_clip_and_label(filename, batch_size, start_pos=-1, num_frames_per_clip=
   np_arr_label = np.array(label).astype(np.int64)
 
   return np_arr_data, np_arr_label, next_batch_start, read_dirnames, valid_len
+
+def get_topone():
+  print('top1')
+  data = np.load('./data_conv5_top1.npy')
+  return data

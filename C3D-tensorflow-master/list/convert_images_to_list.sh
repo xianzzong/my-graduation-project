@@ -5,7 +5,7 @@
 #
 #   Args:
 #       path: the path to the video folder
-#       factor: denominator that split the train and test data. if the number 
+#       factor: denominator that split the train and test data. if the number
 #               is 4, then 1/4 of the data will be written to test.list and the
 #               rest of the data will be written to train.list
 #   Usage:
@@ -28,10 +28,6 @@ do
     COUNT=$[$COUNT + 1]
     for imagesFolder in "$folder"/*
     do
-        if (( $(jot -r 1 1 $2)  > 1 )); then
-            echo "$imagesFolder" $COUNT >> train.list
-        else
-            echo "$imagesFolder" $COUNT >> test.list
-        fi        
+        echo "$imagesFolder" $COUNT >> test2.list
     done
 done

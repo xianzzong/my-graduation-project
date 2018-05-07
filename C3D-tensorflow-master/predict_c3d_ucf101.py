@@ -70,12 +70,14 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
 
 def run_test():
   model_name = "./sports1m_finetuning_ucf101.model"
-  test_list_file = 'list/test1.list'
+  test_list_file = 'list/test2.list'
   num_test_videos = len(list(open(test_list_file,'r')))
   print("Number of test videos={}".format(num_test_videos))
 
   # Get the sets of images and labels for training, validation, and
   images_placeholder, labels_placeholder = placeholder_inputs(FLAGS.batch_size * gpu_num)
+  conv5_top1 = tf.placeholder(tf.float32, shape=(10,16,7,7,512))
+
   with tf.variable_scope('var_name') as var_scope:
     weights = {
             'wc1': _variable_with_weight_decay('wc1', [3, 3, 3, 3, 64], 0.04, 0.00),
@@ -108,6 +110,7 @@ def run_test():
     with tf.device('/gpu:%d' % gpu_index):
       logits = c3d_model.inference_c3d(images_placeholder[gpu_index * FLAGS.batch_size:(gpu_index + 1) * FLAGS.batch_size,:,:,:,:], 0.6, FLAGS.batch_size, weights, biases)
       #logits.append(logit)
+      visual = c3d_model.visual_conv5_topone(conv5_top1,weights)
   #logits = tf.concat(0, logits)
   norm_score = logits
   #norm_score = tf.nn.softmax(logits)
@@ -137,6 +140,15 @@ def run_test():
             feed_dict={images_placeholder: test_images}
             )
     return predict_score
+'''
+
+    test_conv5_top1 = input_data.get_topone()
+    score = visual.eval(session=sess,
+                        feed_dict={conv5_top1:test_conv5_top1})
+
+    print('top1 end!')
+    return score
+
     for i in range(0, valid_len):
       true_label = test_labels[i],
       top1_predicted_label = np.argmax(predict_score[i])
@@ -148,23 +160,28 @@ def run_test():
               predict_score[i][top1_predicted_label]))
   write_file.close()
   print("done")
-
+'''
 def calculate_image(score):
     #wt = tf.Variable(tf.truncated_normal([2,4,4,1,512]))
     #wt = tf.constant(1.0, shape=[2,4,4,1,512])
-    wt = tf.constant(1.0, shape=[1,2,2,1,128])
-    out1 = tf.nn.conv3d_transpose(score, wt, [10,16,112,112,1], [1,1,2,2,1],'SAME')
+    wt = tf.Variable(tf.truncated_normal([1,4,4,1,512]))
+    out1 = tf.nn.conv3d_transpose(score, wt, [10,16,28,28,1], [1,1,4,4,1],'SAME')
+    out1 = tf.nn.relu(out1)
+    wt1 = tf.Variable(tf.truncated_normal([1,3,3,1,1]))
+    out2 = tf.nn.conv3d_transpose(out1, wt1, [10,16,112,112,1], [1,1,4,4,1], 'SAME')
+    out2 = tf.nn.relu(out2)
     sess = tf.Session()
     tf.global_variables_initializer().run(session=sess)
-    out = sess.run(out1)
+    out = sess.run(out2)
     return out
 
 def main(_):
   score=run_test()
   print (score.shape)
   #image = calculate_image(score)
-  #print (image.shape)
-  np.save('image_conv5_origin.npy',score)
+  #print ('imageshape:',image.shape)
+  np.save('data_conv5.npy',score)
+  print ('data conv5 done!')
 #run_test()
 if __name__ == '__main__':
   tf.app.run()
