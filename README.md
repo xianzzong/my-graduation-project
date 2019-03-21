@@ -1,1 +1,1 @@
-# my-graduation-project
+# test-project
