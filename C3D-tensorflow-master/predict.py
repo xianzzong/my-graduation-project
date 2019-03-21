@@ -111,15 +111,12 @@ def run_test():
                 FLAGS.batch_size, weights, biases)
             logits.append(logit)
     logits = tf.concat(0, logits)
-    saver = tf.train.Saver()
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True, log_device_placement=True))
     init = tf.initialize_all_variables()
     sess.run(init)
-    # Create a saver for writing training checkpoints.
-    saver.restore(sess, model_name)
-    # And then after everything is built, start the training loop.
     next_start_pos = 0
     all_steps = int((num_test_videos - 1) / (FLAGS.batch_size * gpu_num) + 1)
+    predict_images = None
     for step in xrange(all_steps):
         # Fill a feed dictionary with the actual set of images and labels
         # for this particular training step.
@@ -130,12 +127,19 @@ def run_test():
                 start_pos=next_start_pos
             )
         predict_data = sess.run(logits, feed_dict={images_placeholder: test_images})
-        return predict_data
+        if predict_images is None:
+            predict_images = predict_data
+        else:
+            predict_images = np.concatenate((predict_images, predict_data), axis=0)
     print("done")
+    return predict_images
 
 
 def main(_):
-    run_test()
+    predict_images = run_test()
+    print(predict_images.shape)
+    np.save('predict_images.npy', predict_images)
+    print("save done")
 
 
 # run_test()
